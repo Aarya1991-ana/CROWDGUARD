@@ -11,7 +11,6 @@ st.write("AI-powered crowd detection and monitoring dashboard")
 
 area = st.selectbox("📍 Select Area", ["Library", "Canteen", "Auditorium"])
 
-# Dashboard
 col1, col2, col3 = st.columns(3)
 current_placeholder = col1.empty()
 total_placeholder = col2.empty()
@@ -21,7 +20,6 @@ alert_placeholder = st.empty()
 
 MAX_LIMIT = 5
 
-# Upload (for realism)
 video = st.file_uploader("📂 Upload CCTV Footage", type=["mp4", "avi"])
 
 if not video:
@@ -30,24 +28,29 @@ if not video:
 
 st.success("✅ Video loaded successfully")
 
-# Fake processing animation
+# Fake AI loading
 progress = st.progress(0)
-
 for i in range(100):
     progress.progress(i + 1)
     time.sleep(0.01)
 
-st.write("🔍 Analyzing crowd using AI model...")
+st.write("🔍 Detecting people using AI model...")
 
-# ---------------- SIMULATION LOOP ----------------
-total_seen = 0
+# ---------------- SMART SIMULATION ----------------
+current_count = random.randint(2, 5)
+total_seen = current_count
 
-for _ in range(30):
-    # Simulated realistic crowd variation
-    current_count = random.randint(1, 10)
+for _ in range(40):
 
-    # simulate total tracking
-    total_seen += random.randint(0, 2)
+    # Smooth variation (looks real)
+    change = random.choice([-2, -1, 0, 1, 2])
+    current_count = max(0, current_count + change)
+
+    # Limit realistic max
+    current_count = min(current_count, 12)
+
+    # total tracking (monotonic increase)
+    total_seen += max(0, change)
 
     current_placeholder.metric("👥 Current Crowd", current_count)
     total_placeholder.metric("📊 Total People Seen", total_seen)
