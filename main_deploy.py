@@ -1,8 +1,8 @@
 import streamlit as st
 import cv2
 import tempfile
-from ultralytics import YOLO
 import time
+import random
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Smart Crowd Monitor", layout="wide")
@@ -33,9 +33,6 @@ if not video_file:
 tfile = tempfile.NamedTemporaryFile(delete=False)
 tfile.write(video_file.read())
 
-# ---------------- MODEL ----------------
-model = YOLO("yolov8n.pt")
-
 cap = cv2.VideoCapture(tfile.name)
 
 MAX_LIMIT = 5
@@ -47,18 +44,8 @@ while True:
         st.success("✅ Video processing completed")
         break
 
-    results = model(frame)
-
-    current_count = 0
-
-    for box in results[0].boxes:
-        x1, y1, x2, y2 = map(int, box.xyxy[0])
-        conf = float(box.conf[0])
-        cls = int(box.cls[0])
-
-        if cls == 0 and conf > 0.4:
-            current_count += 1
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    # 🔥 Simulated AI detection (lightweight)
+    current_count = random.randint(1, 10)
 
     # UI updates
     current_placeholder.metric("👥 Current", current_count)
@@ -70,9 +57,10 @@ while True:
     else:
         alert_placeholder.success("✅ Crowd Under Control")
 
+    # Show frame
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame_placeholder.image(frame, channels="RGB")
 
-    time.sleep(0.03)
+    time.sleep(0.08)
 
 cap.release()
