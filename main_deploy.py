@@ -3,7 +3,11 @@ import cv2
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 import time
-import tempfile
+import 
+import sys
+import subprocess
+
+subprocess.run([sys.executable, "-m", "pip", "install", "opencv-python-headless"])
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Smart Crowd Monitor", layout="wide")
