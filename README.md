@@ -57,5 +57,5 @@ The system:
 
 ## ▶️ How to Run Locally
 ```bash
-pip install -r requirement.txt
+pip install -r requirements.txt
 python -m streamlit run main_local.py
