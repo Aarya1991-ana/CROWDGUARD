@@ -51,3 +51,11 @@ The system:
 - ├── requirements.txt
 - ├── README.md
 - └── yolov8n.pt (optional)
+
+
+---
+
+## ▶️ How to Run Locally
+```bash
+pip install -r requirements.txt
+python -m streamlit run main_local.py
