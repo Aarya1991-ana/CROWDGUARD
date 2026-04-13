@@ -1,12 +1,8 @@
 import streamlit as st
 import cv2
+import tempfile
 from ultralytics import YOLO
-from deep_sort_realtime.deepsort_tracker import DeepSort
 import time
-import sys
-import subprocess
-
-subprocess.run([sys.executable, "-m", "pip", "install", "opencv-python-headless"])
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Smart Crowd Monitor", layout="wide")
@@ -39,11 +35,9 @@ tfile.write(video_file.read())
 
 # ---------------- MODEL ----------------
 model = YOLO("yolov8n.pt")
-tracker = DeepSort(max_age=30)
 
 cap = cv2.VideoCapture(tfile.name)
 
-total_count = set()
 MAX_LIMIT = 5
 
 # ---------------- LOOP ----------------
@@ -55,35 +49,20 @@ while True:
 
     results = model(frame)
 
-    detections = []
+    current_count = 0
+
     for box in results[0].boxes:
-        x1, y1, x2, y2 = box.xyxy[0].tolist()
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
         conf = float(box.conf[0])
         cls = int(box.cls[0])
 
         if cls == 0 and conf > 0.4:
-            w = x2 - x1
-            h = y2 - y1
-            detections.append(([x1, y1, w, h], conf, "person"))
-
-    tracks = tracker.update_tracks(detections, frame=frame)
-
-    current_count = 0
-
-    for track in tracks:
-        if not track.is_confirmed():
-            continue
-
-        track_id = track.track_id
-        total_count.add(track_id)
-        current_count += 1
-
-        l, t, r, b = map(int, track.to_ltrb())
-        cv2.rectangle(frame, (l, t), (r, b), (0, 255, 0), 2)
+            current_count += 1
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
     # UI updates
     current_placeholder.metric("👥 Current", current_count)
-    total_placeholder.metric("📊 Total Seen", len(total_count))
+    total_placeholder.metric("📊 Total (Approx)", current_count)
     limit_placeholder.metric("⚠️ Limit", MAX_LIMIT)
 
     if current_count > MAX_LIMIT:
