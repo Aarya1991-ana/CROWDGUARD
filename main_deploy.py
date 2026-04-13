@@ -1,13 +1,12 @@
 import streamlit as st
+import cv2
+import tempfile
 import time
-import random
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Smart Crowd Monitor", layout="wide")
 
-# ---------------- UI ----------------
 st.title("🎓 Smart Campus Crowd Monitoring System")
-st.write("AI-powered crowd detection and monitoring dashboard")
 
 area = st.selectbox("📍 Select Area", ["Library", "Canteen", "Auditorium"])
 
@@ -17,48 +16,61 @@ total_placeholder = col2.empty()
 limit_placeholder = col3.empty()
 
 alert_placeholder = st.empty()
+frame_placeholder = st.empty()
 
-MAX_LIMIT = 5
+# Area limits
+if area == "Library":
+    MAX_LIMIT = 5
+elif area == "Canteen":
+    MAX_LIMIT = 8
+else:
+    MAX_LIMIT = 12
 
-video = st.file_uploader("📂 Upload CCTV Footage", type=["mp4", "avi"])
+video = st.file_uploader("📂 Upload Video", type=["mp4", "avi"])
 
 if not video:
     st.warning("Upload a video to start monitoring")
     st.stop()
 
-st.success("✅ Video loaded successfully")
+tfile = tempfile.NamedTemporaryFile(delete=False)
+tfile.write(video.read())
 
-# Fake AI loading
-progress = st.progress(0)
-for i in range(100):
-    progress.progress(i + 1)
-    time.sleep(0.01)
+cap = cv2.VideoCapture(tfile.name)
 
-st.write("🔍 Detecting people using AI model...")
+# HOG person detector
+hog = cv2.HOGDescriptor()
+hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
-# ---------------- SMART SIMULATION ----------------
-current_count = random.randint(2, 5)
-total_seen = current_count
+total_seen = 0
 
-for _ in range(40):
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-    # Smooth variation (looks real)
-    change = random.choice([-2, -1, 0, 1, 2])
-    current_count = max(0, current_count + change)
+    # Detect people
+    boxes, _ = hog.detectMultiScale(frame, winStride=(8,8))
 
-    # Limit realistic max
-    current_count = min(current_count, 12)
+    current_count = len(boxes)
+    total_seen += current_count
 
-    # total tracking (monotonic increase)
-    total_seen += max(0, change)
+    # Draw boxes
+    for (x, y, w, h) in boxes:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0,255,0), 2)
 
-    current_placeholder.metric("👥 Current Crowd", current_count)
-    total_placeholder.metric("📊 Total People Seen", total_seen)
-    limit_placeholder.metric("⚠️ Max Limit", MAX_LIMIT)
+    # UI update
+    current_placeholder.metric("👥 Current", current_count)
+    total_placeholder.metric("📊 Total Seen", total_seen)
+    limit_placeholder.metric("⚠️ Limit", MAX_LIMIT)
 
     if current_count > MAX_LIMIT:
-        alert_placeholder.error("🚨 Crowd Limit Exceeded! Take action immediately")
+        alert_placeholder.error("🚨 Crowd Limit Exceeded!")
     else:
-        alert_placeholder.success("✅ Crowd under safe limit")
+        alert_placeholder.success("✅ Safe")
 
-    time.sleep(0.4)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame_placeholder.image(frame, channels="RGB")
+
+    time.sleep(0.05)
+
+cap.release()
